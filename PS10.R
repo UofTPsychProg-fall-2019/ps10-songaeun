@@ -1,6 +1,7 @@
 library(tidyverse)
 library(Hmisc)
-
+install.packages("wesanderson") # for figure color manipulation
+library(wesanderson)
 # This problem set will test out your ggploting skills using the Big 5 health dataset 
 # that you wrangled in problem set 9
 
@@ -57,7 +58,10 @@ ipip.l <- ipip %>%
 # create a boxplot that visualizes BMI distributions according to exercise habits, separately for females and males
 # include at least two customizations to the look of the boxplot 
 # check the documentation for options
-Q1 <- ggplot()
+theme_set(theme_minimal())
+Q1 <- ggplot(ipip, aes(x=exer, y=BMI, color = gender))+
+  geom_boxplot(outlier.size = .8, outlier.shape = 4, lwd = 0.5, notch = T)+
+  scale_color_manual(values = wes_palette("Royal1"))
 Q1
 ggsave('figures/Q1.pdf',units='in',width=4,height=5)
 
@@ -66,16 +70,20 @@ ggsave('figures/Q1.pdf',units='in',width=4,height=5)
 # create a scatter plot to visualize the relationship between income and BMI, coloring points according to gender
 # use geom_smooth to add linear model fit lines, separately for males and females
 Q2a <- ggplot(ipip,aes(x=logMedInc,y=BMI, color=gender))+
-    geom_point(size=.5,alpha=.4)+
-    geom_smooth(method='lm')
+    geom_point(size=.5,alpha=.4, shape = 18)+
+    geom_smooth(method='lm')+
+    scale_color_manual(values = wes_palette("Cavalcanti1"))
 Q2a
 ggsave('figures/Q2a.pdf',units='in',width=4,height=5)
 
 # there are some outlying lower income points, especially for females
 # recreate this graph filtering for log median income>10
-Q2b <- ggplot()
+Q2b <- ggplot(subset(ipip,logMedInc > 10), aes(x=logMedInc,y=BMI, color=gender))+
+  geom_point(size=.5,alpha=.4, shape = 18)+
+  geom_smooth(method='lm')+
+  scale_color_manual(values = wes_palette("Cavalcanti1"))
 Q2b
-ggsave('figures/Q2b.pdf',units='in',width=4,height=5)
+ ggsave('figures/Q2b.pdf',units='in',width=4,height=5)
 
 
 # Q3 visualizing income's relationship with exercise habits  ---------------------------------------
@@ -85,7 +93,12 @@ ggsave('figures/Q2b.pdf',units='in',width=4,height=5)
 # the default range on the y-axis will be very large given the range of the data
 # add a +coord_cartesian(ylim = c(10, 12)) to rescale it.
 
-Q3 <- ggplot()
+Q3 <- ggplot(ipip, aes(x=gender, y=logMedInc, color = exer, fill = exer))+
+   stat_summary(fun.y=mean, geom="bar", position=position_dodge(width=.9))+
+   stat_summary(fun.data=mean_cl_boot, geom="errorbar", position=position_dodge(width=.9), width=.3)+
+   coord_cartesian(ylim = c(10, 12))+
+   scale_fill_manual(values = alpha(wes_palette("IsleofDogs1"), .4))+
+   scale_color_manual(values = wes_palette("IsleofDogs1"))
 Q3
 ggsave('figures/Q3.pdf',units='in',width=4,height=5)
 
@@ -95,7 +108,11 @@ ggsave('figures/Q3.pdf',units='in',width=4,height=5)
 # for each BMI category, separately for males and females
 # this is a lot to visualize in a single plot! use +facet_wrap(vars(trait)) to generate seperate plots for each personality trait
 
-Q4 <- ggplot()
+Q4 <- ggplot(ipip.l, aes(x=BMI_cat, y=value,  group=interaction(trait, gender), color=gender))+
+  stat_summary(fun.y=mean, geom='point', position=position_dodge(width=.3), shape=15)+
+  stat_summary(fun.data=mean_cl_boot, geom='errorbar', width=0, position = position_dodge(width=.3))+
+  facet_wrap(vars(trait))+
+  scale_color_manual(values = wes_palette("GrandBudapest2"))
 Q4
 ggsave('figures/Q4.pdf',units='in',width=4,height=5)
 
@@ -104,12 +121,18 @@ ggsave('figures/Q4.pdf',units='in',width=4,height=5)
 
 # use dplyr functions to calculate the mean of each personality trait for each combination of gender, BMI group
 ipip.g <- ipip.l %>%
-    ...
+  group_by(trait, gender, BMI_cat) %>%
+  summarise(value = mean(value))
+  
 
 
 # plot the average value of personality trait (colored as separate lines), according to the BMI category
 # facet_warp gender so that you can see these relationships separately for females and males
-Q5 <- ggplot()
+Q5 <- ggplot(ipip.g, aes(x=BMI_cat, y=value, group = interaction(gender,trait), color = trait))+
+  geom_point() +
+  geom_line(linetype = 'twodash')+
+  facet_wrap(vars(gender))+
+  scale_color_manual(values = wes_palette("Moonrise3"))
 Q5
 ggsave('figures/Q5.pdf',units='in',width=4,height=5)
     
